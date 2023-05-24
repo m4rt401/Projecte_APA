@@ -2,6 +2,8 @@ import soundfile as sf
 import sounddevice as sd
 import numpy as np
 import math
+import wave as wv
+
 def lectura_audio(Ficheroaudio):
     '''
     Lee el fichero de audio introducido y retorna los datos, el sample rate y la información de la cabecera del archivo sea del tipo que sea.
@@ -20,7 +22,7 @@ def lectura_audio(Ficheroaudio):
     return data,samplerate,info
 
 def downsampler(data, samplerate, info, fader):
-    if fader > 0 & 100 > fader:
+    if 100 > fader & fader>0:
         factor_degradacion = (fader/100)
     elif fader == 0:
         factor_degradacion = 1
@@ -28,7 +30,7 @@ def downsampler(data, samplerate, info, fader):
         raise Exception("Valor fuera de valores permitidos") from None 
     
     print(factor_degradacion)
-    samplerate_nuevo = int(samplerate*factor_degradacion)
+    samplerate_nuevo = int(samplerate*factor_degradacion/2)
     factor_downsampling = math.ceil(samplerate/samplerate_nuevo)
     print(factor_downsampling)
     downsampled_data = np.zeros_like(data)
@@ -43,8 +45,8 @@ def downsampler(data, samplerate, info, fader):
 
 def escritura_wave(data, samplerate, info):
     # Crear el objeto SoundFile como un archivo wav con la misma cabecera que info
-    with sf.SoundFile('downsampledOut.wav', 'w', samplerate=samplerate, channels=info.channels, subtype=info.subtype) as archivosalida:
-        # Escribir los datos en el archivo
-        archivosalida.write(data)
+    out_file = "Downsampled_out.wav"
+    sf.write(out_file, data, samplerate, subtype=info.subtype, format='WAV')
+    
 
     
