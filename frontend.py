@@ -26,7 +26,7 @@ class FaderApp(tk.Tk):
         self.canvas.bind("<Button-1>", self.move_knob)
 
         self.label = tk.Label(self, textvariable=self.value)
-        self.label.place(x=114, y=355)  # Posición deseada de la etiqueta
+        self.label.place(x=113, y=354)  # Posición deseada de la etiqueta
 
         self.selected_file_label = tk.Label(self, text="Archivo seleccionado: ")
         self.selected_file_label.place(x=20, y=470)  # Posición deseada de la etiqueta de ruta seleccionada
