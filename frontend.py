@@ -1,7 +1,7 @@
 import tkinter as tk
 from tkinter import filedialog
 from PIL import Image, ImageTk
-import pygame
+import sounddevice as sd
 import backend as bk
 
 class FaderApp(tk.Tk):
@@ -41,8 +41,7 @@ class FaderApp(tk.Tk):
         self.is_playing = False
 
         self.download_button = tk.Button(self, text="Download", command=self.download_file)
-        self.download_button.place(x=325, y=470)
-
+        self.download_button.place(x=325, y=470) # Posición deseada del botón de descarga
 
     def move_knob(self, event):
         y = event.y
@@ -55,29 +54,40 @@ class FaderApp(tk.Tk):
         self.value.set(int((y-25) * 100 / 200))
 
     def open_file_dialog(self):
+        '''
+        Función que nos permite buscar un fichero de audio por nuestro ordenador para poderlo usar más adelante.
+        '''
         file_path = filedialog.askopenfilename()
         self.org_data, self.samplerate, self.info = bk.lectura_audio(file_path)
+
         if file_path:
             self.selected_file_label.config(text="Archivo seleccionado: " + file_path)
 
     def play_pause_file(self):
-        
+        '''
+        Función que regula el boton de play/pause. 
+        Cada vez que se da al play se consigue el valor en el que esta el fader(porcentaje de calidad) para poder reproducir la señal downsampleada.
+        En el momento en el que se da Play, este mismo botón cambia a ser un botón de Pause y se se apreta lo que hace es parar de reproducir y prepararse para volver a reproducir el audio.
+        '''
         if self.is_playing == False:
             fader=self.value.get()
-            self.data_DWS, self.samplerate, self.info, temp_file = bk.downsampler(self.org_data, self.samplerate, self.info, fader)
-
-            #file_path="temp_audio.wav"
-            pygame.mixer.init()
-            pygame.mixer.music.load(temp_file)
-            pygame.mixer.music.play()
+            self.data_DWS, self.samplerate, self.info = bk.downsampler(self.org_data, self.samplerate, self.info, fader)
+            
+            sd.play(self.data_DWS, self.samplerate)
             self.is_playing = True
             self.play_button.config(text="Pause")
         else:
-            pygame.mixer.music.pause()
+            
+            sd.stop()
             self.is_playing = False
             self.play_button.config(text="Play")
 
     def download_file(self):
+        '''
+        Función que, de manera independiente a la posición del fader con la que se haya dado a reproducir, agarra el valor de fader en el que esté
+        colocado y escribe un fichero wave con ese porcentaje de calidad. Para ello se usa la función "escritura_wave" definida en back end que
+        agarra los datos y los codifica en formato wave. Este fichero nuevo tiene como salida la misma carpeta del proyecto.
+        '''
         self.data_DWS, self.samplerate, self.info = bk.downsampler(self.org_data, self.samplerate, self.info,self.value.get())
         bk.escritura_wave(self.data_DWS, self.samplerate, self.info)
 

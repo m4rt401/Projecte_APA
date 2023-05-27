@@ -22,7 +22,11 @@ def lectura_audio(Ficheroaudio):
     return data,samplerate,info
 
 def downsampler(data, samplerate, info, fader):
-    if 100 > fader & fader>0:
+    '''
+    Esta función reduce la calidad del audio introducido como "data" en función a un porcentaje de calidad "fader". 
+    El valor máximo de calidad es 100% y el valor mínimo es 1%.  
+    '''
+    if 101 > fader & fader>0:
         factor_degradacion = (fader/100)
     elif fader == 0:
         factor_degradacion = 1
@@ -36,14 +40,10 @@ def downsampler(data, samplerate, info, fader):
     downsampled_data = np.zeros_like(data)
     downsampled_data[::factor_downsampling] = data[::factor_downsampling]
 
-    temp_file = "temp_audio.wav"
-    sf.write(temp_file, downsampled_data, samplerate, subtype=info.subtype, format='WAV')
-    data, _ = sf.read(temp_file, dtype='float32')
-    
-    return downsampled_data, samplerate, info, temp_file
+    return downsampled_data, samplerate, info 
 
 def escritura_wave(data, samplerate, info):
-    # Crear el objeto SoundFile como un archivo wav con la misma cabecera que info
+    
     out_file = "Downsampled_out.wav"
     sf.write(out_file, data, samplerate, subtype=info.subtype, format='WAV')
     
