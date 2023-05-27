@@ -1,7 +1,8 @@
 import tkinter as tk
 from tkinter import filedialog
 from PIL import Image, ImageTk
-import pygame
+import sounddevice as sd
+import backend as bk
 
 class FaderApp(tk.Tk):
     def __init__(self):
@@ -11,7 +12,7 @@ class FaderApp(tk.Tk):
         self.value = tk.IntVar(value=0)
 
         # Cargar la imagen de fondo
-        self.image = ImageTk.PhotoImage(file="Projecte_APA/DOWNSAMPLING.png")
+        self.image = ImageTk.PhotoImage(file="DOWNSAMPLING.png")
 
         # Crear un widget Label y establecer la imagen de fondo
         background_label = tk.Label(self, image=self.image)
@@ -30,13 +31,17 @@ class FaderApp(tk.Tk):
         self.label.place(x=113, y=354)  # Posición deseada de la etiqueta
 
         self.selected_file_label = tk.Label(self, text="Archivo seleccionado: ")
-        self.selected_file_label.place(x=20, y=470)  # Posición deseada de la etiqueta de ruta seleccionada
+        self.selected_file_label.place(x=20, y=430)  # Posición deseada de la etiqueta de ruta seleccionada
 
         self.browse_button = tk.Button(self, text="Browse", command=self.open_file_dialog)
         self.browse_button.place(x=450, y=470)  # Posición deseada del botón de navegación
 
         self.play_button = tk.Button(self, text="Play", command=self.play_pause_file)
         self.play_button.place(x=400, y=470)  # Posición deseada del botón de reproducción
+        self.is_playing = False
+
+        self.download_button = tk.Button(self, text="Download", command=self.download_file)
+        self.download_button.place(x=325, y=470) # Posición deseada del botón de descarga
 
     def move_knob(self, event):
         y = event.y
@@ -49,23 +54,42 @@ class FaderApp(tk.Tk):
         self.value.set(int((y-25) * 100 / 200))
 
     def open_file_dialog(self):
+        '''
+        Función que nos permite buscar un fichero de audio por nuestro ordenador para poderlo usar más adelante.
+        '''
         file_path = filedialog.askopenfilename()
+        self.org_data, self.samplerate, self.info = bk.lectura_audio(file_path)
+
         if file_path:
             self.selected_file_label.config(text="Archivo seleccionado: " + file_path)
 
     def play_pause_file(self):
-        file_path = self.selected_file_label.cget("Projecte_APA/temp_audio.txt")[21:]  # Obtener la ruta del archivo desde el label
-        
-        if not self.is_playing:
-            pygame.mixer.init()
-            pygame.mixer.music.load(file_path)
-            pygame.mixer.music.play()
+        '''
+        Función que regula el boton de play/pause. 
+        Cada vez que se da al play se consigue el valor en el que esta el fader(porcentaje de calidad) para poder reproducir la señal downsampleada.
+        En el momento en el que se da Play, este mismo botón cambia a ser un botón de Pause y se se apreta lo que hace es parar de reproducir y prepararse para volver a reproducir el audio.
+        '''
+        if self.is_playing == False:
+            fader=self.value.get()
+            self.data_DWS, self.samplerate, self.info = bk.downsampler(self.org_data, self.samplerate, self.info, fader)
+            
+            sd.play(self.data_DWS, self.samplerate)
             self.is_playing = True
             self.play_button.config(text="Pause")
         else:
-            pygame.mixer.music.pause()
+            
+            sd.stop()
             self.is_playing = False
             self.play_button.config(text="Play")
+
+    def download_file(self):
+        '''
+        Función que, de manera independiente a la posición del fader con la que se haya dado a reproducir, agarra el valor de fader en el que esté
+        colocado y escribe un fichero wave con ese porcentaje de calidad. Para ello se usa la función "escritura_wave" definida en back end que
+        agarra los datos y los codifica en formato wave. Este fichero nuevo tiene como salida la misma carpeta del proyecto.
+        '''
+        self.data_DWS, self.samplerate, self.info = bk.downsampler(self.org_data, self.samplerate, self.info,self.value.get())
+        bk.escritura_wave(self.data_DWS, self.samplerate, self.info)
 
 if __name__ == "__main__":
     app = FaderApp()
