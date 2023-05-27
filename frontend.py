@@ -2,6 +2,7 @@ import tkinter as tk
 from tkinter import filedialog
 from PIL import Image, ImageTk
 import pygame
+import backend as bk
 
 class FaderApp(tk.Tk):
     def __init__(self):
@@ -11,7 +12,7 @@ class FaderApp(tk.Tk):
         self.value = tk.IntVar(value=0)
 
         # Cargar la imagen de fondo
-        self.image = ImageTk.PhotoImage(file="Projecte_APA/DOWNSAMPLING.png")
+        self.image = ImageTk.PhotoImage(file="DOWNSAMPLING.png")
 
         # Crear un widget Label y establecer la imagen de fondo
         background_label = tk.Label(self, image=self.image)
@@ -30,13 +31,18 @@ class FaderApp(tk.Tk):
         self.label.place(x=113, y=354)  # Posición deseada de la etiqueta
 
         self.selected_file_label = tk.Label(self, text="Archivo seleccionado: ")
-        self.selected_file_label.place(x=20, y=470)  # Posición deseada de la etiqueta de ruta seleccionada
+        self.selected_file_label.place(x=20, y=430)  # Posición deseada de la etiqueta de ruta seleccionada
 
         self.browse_button = tk.Button(self, text="Browse", command=self.open_file_dialog)
         self.browse_button.place(x=450, y=470)  # Posición deseada del botón de navegación
 
         self.play_button = tk.Button(self, text="Play", command=self.play_pause_file)
         self.play_button.place(x=400, y=470)  # Posición deseada del botón de reproducción
+        self.is_playing = False
+
+        self.download_button = tk.Button(self, text="Download", command=self.download_file)
+        self.download_button.place(x=325, y=470)
+
 
     def move_knob(self, event):
         y = event.y
@@ -50,15 +56,19 @@ class FaderApp(tk.Tk):
 
     def open_file_dialog(self):
         file_path = filedialog.askopenfilename()
+        self.org_data, self.samplerate, self.info = bk.lectura_audio(file_path)
         if file_path:
             self.selected_file_label.config(text="Archivo seleccionado: " + file_path)
 
     def play_pause_file(self):
-        file_path = self.selected_file_label.cget("Projecte_APA/temp_audio.txt")[21:]  # Obtener la ruta del archivo desde el label
         
-        if not self.is_playing:
+        if self.is_playing == False:
+            fader=self.value.get()
+            self.data_DWS, self.samplerate, self.info, temp_file = bk.downsampler(self.org_data, self.samplerate, self.info, fader)
+
+            #file_path="temp_audio.wav"
             pygame.mixer.init()
-            pygame.mixer.music.load(file_path)
+            pygame.mixer.music.load(temp_file)
             pygame.mixer.music.play()
             self.is_playing = True
             self.play_button.config(text="Pause")
@@ -66,6 +76,10 @@ class FaderApp(tk.Tk):
             pygame.mixer.music.pause()
             self.is_playing = False
             self.play_button.config(text="Play")
+
+    def download_file(self):
+        self.data_DWS, self.samplerate, self.info = bk.downsampler(self.org_data, self.samplerate, self.info,self.value.get())
+        bk.escritura_wave(self.data_DWS, self.samplerate, self.info)
 
 if __name__ == "__main__":
     app = FaderApp()

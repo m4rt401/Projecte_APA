@@ -39,9 +39,8 @@ def downsampler(data, samplerate, info, fader):
     temp_file = "temp_audio.wav"
     sf.write(temp_file, downsampled_data, samplerate, subtype=info.subtype, format='WAV')
     data, _ = sf.read(temp_file, dtype='float32')
-    sd.play(data)
-
-    return downsampled_data, samplerate, info
+    
+    return downsampled_data, samplerate, info, temp_file
 
 def escritura_wave(data, samplerate, info):
     # Crear el objeto SoundFile como un archivo wav con la misma cabecera que info
