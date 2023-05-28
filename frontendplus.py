@@ -3,6 +3,7 @@ from tkinter import filedialog
 from PIL import Image, ImageTk
 import sounddevice as sd
 import backend as bk
+import backendIMG as bkim
 
 class FaderApp(tk.Tk):
     def __init__(self):
@@ -17,6 +18,17 @@ class FaderApp(tk.Tk):
         # Crear un widget Label y establecer la imagen de fondo
         background_label = tk.Label(self, image=self.image)
         background_label.place(x=0, y=0, relwidth=1, relheight=1)
+
+        # Cargar la imagen "img.jpg"
+        self.img = Image.open("Proba.jpg")
+        self.img = self.img.resize((220, 220))  # Redimensionar la imagen a 220x220
+
+        # Convertir la imagen a PhotoImage
+        self.img_tk = ImageTk.PhotoImage(self.img)
+
+        # Crear un widget Label para mostrar la imagen
+        img_label = tk.Label(self, image=self.img_tk)
+        img_label.place(x=260, y=140)  # Posición deseada de la imagen
 
         self.canvas = tk.Canvas(self, width=10, height=225, bg="black", highlightthickness=0)
         self.canvas.place(x=120, y=126)  # Posición deseada del fader
@@ -73,6 +85,17 @@ class FaderApp(tk.Tk):
             fader=self.value.get()
             self.data_DWS, self.samplerate, self.info = bk.downsampler(self.org_data, self.samplerate, self.info, fader)
             
+            #Imagen
+            imgpath=bkim.downsample_img("Proba.jpg", fader)
+            self.img = Image.open(imgpath)
+            self.img = self.img.resize((220, 220))  # Redimensionar la imagen a 220x220         
+            # Convertir la imagen a PhotoImage
+            self.img_tk = ImageTk.PhotoImage(self.img)
+            # Crear un widget Label para mostrar la imagen
+            img_label = tk.Label(self, image=self.img_tk)
+            img_label.place(x=260, y=140)  # Posición deseada de la imagen
+
+
             sd.play(self.data_DWS, self.samplerate)
             self.is_playing = True
             self.play_button.config(text="Pause")
